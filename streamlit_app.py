@@ -22,3 +22,18 @@ components.html(
     """,
     height=100,
 )
+
+
+if st.button("処理開始"):
+    with st.spinner("処理中..."):
+        time.sleep(3)  # 3秒待つ
+
+    st.success("処理が完了しました！")
+
+    # 音を鳴らすHTMLコード
+    components.html(
+        """
+        <audio id="success-audio" src="https://www.soundjay.com/buttons/sounds/button-7.mp3" autoplay></audio>
+        """,
+        height=0,
+    )
