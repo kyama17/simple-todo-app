@@ -25,6 +25,5 @@ if st.button("処理開始"):
         var audio = new Audio('https://www.soundjay.com/button/beep-07.wav');
         audio.play();
         </script>
-        """,
-        unsafe_allow_html=True,
+        """
     )
