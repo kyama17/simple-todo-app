@@ -12,7 +12,7 @@ st.write(
 components.html(
     """
     <button onclick="playAudio()">処理開始</button>
-    <audio id="audio" src="https://www.soundjay.com/button/beep-07.wav"></audio>
+    <audio id="audio" src="https://www.soundjay.com/buttons/sounds/button-7.mp3"></audio>
     <script>
     function playAudio() {
         document.getElementById('audio').play();
