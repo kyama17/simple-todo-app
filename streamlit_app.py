@@ -9,19 +9,16 @@ st.write(
 )
 
 
-# 処理内容のサンプル
-st.write("処理完了時に音を鳴らすデモ")
-
-if st.button("処理開始"):
-    with st.spinner("処理中..."):
-        time.sleep(3)  # 3秒待つ
-
-    st.success("処理が完了しました！")
-
-    # 音を鳴らすHTMLコード
-    components.html(
-        """
-        <audio id="success-audio" src="https://www.soundjay.com/button/beep-07.wav" autoplay></audio>
-        """,
-        height=0,
-    )
+components.html(
+    """
+    <button onclick="playAudio()">処理開始</button>
+    <audio id="audio" src="https://www.soundjay.com/button/beep-07.wav"></audio>
+    <script>
+    function playAudio() {
+        document.getElementById('audio').play();
+        setTimeout(() => alert("処理が完了しました！"), 3000);
+    }
+    </script>
+    """,
+    height=100,
+)
