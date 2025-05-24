@@ -347,6 +347,7 @@ header h1 {
     display: flex;
     align-items: center;
     margin-left: auto; /* Pushes action buttons to the right */
+    gap: 8px; /* Added to manage spacing between action buttons */
 }
 
 .edit-btn, .save-btn, .move-up-btn, .move-down-btn {
@@ -354,11 +355,11 @@ header h1 {
     color: var(--action-btn-text); /* Default for edit/save, overridden for move */
     border: none;
     border-radius: 5px;
-    padding: 6px 10px; 
+    padding: 8px 12px; 
     cursor: pointer;
     font-size: 12px;
     transition: background 0.3s;
-    margin-left: 5px; 
+    /* margin-left: 5px; */ /* Removed for consistency, will be handled by todo-actions gap */
 }
 .edit-btn, .save-btn {
     background: var(--action-btn-bg);
