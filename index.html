@@ -10,10 +10,12 @@
     <div class="container">
         <header>
             <h1>📝 Todoアプリ</h1>
+            <button id="themeToggleBtn">🌙</button>
         </header>
         
         <div class="todo-input">
             <input type="text" id="todoInput" placeholder="新しいタスクを入力してください..." maxlength="100">
+            <input type="date" id="dueDateInput">
             <button id="addBtn">追加</button>
         </div>
         
@@ -21,6 +23,7 @@
             <button class="filter-btn active" data-filter="all">すべて</button>
             <button class="filter-btn" data-filter="active">未完了</button>
             <button class="filter-btn" data-filter="completed">完了済み</button>
+            <input type="search" id="searchInput" placeholder="タスクを検索...">
         </div>
         
         <div class="todo-stats">

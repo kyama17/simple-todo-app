@@ -9,6 +9,7 @@ class TodoApp {
 
     initializeElements() {
         this.todoInput = document.getElementById('todoInput');
+        this.dueDateInput = document.getElementById('dueDateInput'); // Added
         this.addBtn = document.getElementById('addBtn');
         this.todoList = document.getElementById('todoList');
         this.filterBtns = document.querySelectorAll('.filter-btn');
@@ -16,6 +17,11 @@ class TodoApp {
         this.totalCount = document.getElementById('totalCount');
         this.activeCount = document.getElementById('activeCount');
         this.completedCount = document.getElementById('completedCount');
+        this.themeToggleBtn = document.getElementById('themeToggleBtn'); 
+        this.searchInput = document.getElementById('searchInput'); // Added
+        this.currentTheme = localStorage.getItem('todoTheme') || 'light'; 
+        this.applyTheme(this.currentTheme); 
+        this.searchTerm = ''; // Added
     }
 
     bindEvents() {
@@ -40,6 +46,36 @@ class TodoApp {
         this.clearCompletedBtn.addEventListener('click', () => {
             this.clearCompleted();
         });
+
+        // Theme toggle button event
+        if (this.themeToggleBtn) {
+            this.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
+        }
+
+        // Search input event
+        if (this.searchInput) {
+            this.searchInput.addEventListener('input', () => {
+                this.searchTerm = this.searchInput.value.toLowerCase().trim();
+                this.render();
+            });
+        }
+    }
+
+    applyTheme(theme) {
+        if (theme === 'dark') {
+            document.body.classList.add('dark-theme');
+            if (this.themeToggleBtn) this.themeToggleBtn.textContent = '☀️';
+        } else {
+            document.body.classList.remove('dark-theme');
+            if (this.themeToggleBtn) this.themeToggleBtn.textContent = '🌙';
+        }
+        this.currentTheme = theme;
+    }
+
+    toggleTheme() {
+        const newTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('todoTheme', newTheme);
+        this.applyTheme(newTheme);
     }
 
     addTodo() {
@@ -49,15 +85,20 @@ class TodoApp {
             return;
         }
 
+        const dueDateValue = this.dueDateInput.value;
+
         const todo = {
             id: Date.now(),
             text: text,
             completed: false,
-            createdAt: new Date().toLocaleString('ja-JP')
+            createdAt: new Date().toLocaleString('ja-JP'),
+            priority: 'medium', // Default priority for new todos
+            dueDate: dueDateValue || null // Add dueDate
         };
 
         this.todos.unshift(todo);
         this.todoInput.value = '';
+        this.dueDateInput.value = ''; // Clear due date input
         this.saveTodos();
         this.render();
         this.showMessage('タスクを追加しました');
@@ -100,6 +141,10 @@ class TodoApp {
             return;
         }
 
+        if (!confirm("本当に完了済みのタスクをすべて削除しますか？")) {
+            return; // If user clicks 'Cancel', do nothing and exit the function.
+        }
+
         this.todos = this.todos.filter(todo => !todo.completed);
         this.saveTodos();
         this.render();
@@ -107,14 +152,25 @@ class TodoApp {
     }
 
     getFilteredTodos() {
+        let statusFilteredTodos;
         switch (this.currentFilter) {
             case 'active':
-                return this.todos.filter(todo => !todo.completed);
+                statusFilteredTodos = this.todos.filter(todo => !todo.completed);
+                break;
             case 'completed':
-                return this.todos.filter(todo => todo.completed);
+                statusFilteredTodos = this.todos.filter(todo => todo.completed);
+                break;
             default:
-                return this.todos;
+                statusFilteredTodos = [...this.todos]; // Operate on a copy
+                break;
         }
+
+        if (this.searchTerm) {
+            return statusFilteredTodos.filter(todo => 
+                todo.text.toLowerCase().includes(this.searchTerm)
+            );
+        }
+        return statusFilteredTodos;
     }
 
     render() {
@@ -133,8 +189,8 @@ class TodoApp {
             `;
             this.todoList.appendChild(emptyMessage);
         } else {
-            filteredTodos.forEach(todo => {
-                const todoItem = this.createTodoElement(todo);
+            filteredTodos.forEach((todo, index) => { // Pass index and filteredTodos
+                const todoItem = this.createTodoElement(todo, index, filteredTodos);
                 this.todoList.appendChild(todoItem);
             });
         }
@@ -147,15 +203,54 @@ class TodoApp {
         this.clearCompletedBtn.disabled = !hasCompleted;
     }
 
-    createTodoElement(todo) {
+    createTodoElement(todo, index, filteredList) { // Added index and filteredList
         const li = document.createElement('li');
-        li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+        let liClass = `todo-item ${todo.completed ? 'completed' : ''} priority-${todo.priority}`;
+
+        // Visual reminders for due dates
+        if (todo.dueDate && !todo.completed) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalize today to start of day
+            const dueDate = new Date(todo.dueDate);
+            dueDate.setHours(0, 0, 0, 0); // Normalize due date
+
+            const diffTime = dueDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) {
+                liClass += ' overdue';
+            } else if (diffDays <= 1) { // Today or tomorrow
+                liClass += ' due-soon';
+            }
+        }
+        li.className = liClass;
         
+        const prioritySelectorHtml = `
+            <select class="priority-selector" data-id="${todo.id}">
+                <option value="low" ${todo.priority === 'low' ? 'selected' : ''}>低</option>
+                <option value="medium" ${todo.priority === 'medium' ? 'selected' : ''}>中</option>
+                <option value="high" ${todo.priority === 'high' ? 'selected' : ''}>高</option>
+            </select>
+        `;
+
+        let dueDateHtml = '';
+        if (todo.dueDate) {
+            const formattedDueDate = new Date(todo.dueDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            dueDateHtml = `<span class="task-due-date">(期日: ${formattedDueDate})</span>`;
+        }
+
         li.innerHTML = `
             <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''}>
             <span class="todo-text">${this.escapeHtml(todo.text)}</span>
+            ${prioritySelectorHtml}
             <span class="todo-date">${todo.createdAt}</span>
-            <button class="delete-btn">削除</button>
+            ${dueDateHtml}
+            <div class="todo-actions">
+                <button class="move-up-btn" title="上に移動">↑</button>
+                <button class="move-down-btn" title="下に移動">↓</button>
+                <button class="edit-btn">編集</button>
+                <button class="delete-btn">削除</button>
+            </div>
         `;
 
         // チェックボックスのイベント
@@ -170,7 +265,174 @@ class TodoApp {
             this.deleteTodo(todo.id);
         });
 
+        //編集ボタンのイベント
+        const editBtn = li.querySelector('.edit-btn');
+        editBtn.addEventListener('click', () => {
+            this.switchToEditMode(li, todo);
+        });
+
+        // Priority selector event
+        const prioritySelector = li.querySelector('.priority-selector');
+        prioritySelector.addEventListener('change', (e) => {
+            this.changePriority(todo.id, e.target.value);
+        });
+
+        // Move buttons events and state
+        const moveUpBtn = li.querySelector('.move-up-btn');
+        const moveDownBtn = li.querySelector('.move-down-btn');
+
+        if (index === 0) {
+            moveUpBtn.disabled = true;
+        }
+        if (index === filteredList.length - 1) {
+            moveDownBtn.disabled = true;
+        }
+
+        moveUpBtn.addEventListener('click', () => {
+            this.moveTask(todo.id, 'up');
+        });
+
+        moveDownBtn.addEventListener('click', () => {
+            this.moveTask(todo.id, 'down');
+        });
+
         return li;
+    }
+
+    switchToEditMode(listItem, todo) {
+        const textSpan = listItem.querySelector('.todo-text');
+        const currentText = todo.text;
+        const currentDueDate = todo.dueDate || '';
+
+        const textInput = document.createElement('input');
+        textInput.type = 'text';
+        textInput.className = 'edit-input';
+        textInput.value = currentText;
+        textInput.maxLength = 100;
+
+        const dateInput = document.createElement('input');
+        dateInput.type = 'date';
+        dateInput.className = 'edit-due-date-input';
+        dateInput.value = currentDueDate;
+
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'save-btn';
+        saveBtn.textContent = '保存';
+
+        // Create a container for inputs
+        const inputContainer = document.createElement('div');
+        inputContainer.className = 'edit-input-container';
+        inputContainer.appendChild(textInput);
+        inputContainer.appendChild(dateInput);
+
+        textSpan.replaceWith(inputContainer);
+        textInput.focus();
+
+        const saveChanges = () => {
+            const newText = textInput.value.trim();
+            const newDueDate = dateInput.value || null;
+
+            if (!newText) {
+                this.showMessage('タスク内容は空にできません。');
+                this.render(); // Revert if text is empty
+                return;
+            }
+            // Check if anything actually changed
+            if (newText !== currentText || newDueDate !== currentDueDate) {
+                this.editTodo(todo.id, newText, newDueDate);
+            } else {
+                this.render(); // Revert if nothing changed
+            }
+        };
+
+        // Save on Enter in text input
+        textInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveChanges();
+            }
+        });
+        
+        // Save on Enter in date input (less common but good to have)
+        dateInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveChanges();
+            }
+        });
+
+        // Handle blur - this logic becomes a bit more complex with multiple inputs
+        // A simpler approach for now: blur on either input outside the container might revert
+        const inputs = [textInput, dateInput];
+        inputs.forEach(inputField => {
+            inputField.addEventListener('blur', (e) => {
+                // Delay to allow save button click
+                setTimeout(() => {
+                    // If focus moves to an element not part of the edit (e.g. not save button, not the other input)
+                    if (!inputContainer.contains(document.activeElement) && !saveBtn.contains(document.activeElement)) {
+                        // Check if relatedTarget is null (focus left window) or not part of the edit form
+                        if (e.relatedTarget === null || (!inputContainer.contains(e.relatedTarget) && e.relatedTarget !== saveBtn)) {
+                           this.render(); // Revert
+                        }
+                    }
+                }, 100);
+            });
+        });
+        
+        saveBtn.addEventListener('click', saveChanges);
+
+        const editBtn = listItem.querySelector('.edit-btn');
+        if (editBtn) {
+            editBtn.style.display = 'none';
+        }
+        // Insert save button after the input container
+        inputContainer.insertAdjacentElement('afterend', saveBtn);
+    }
+
+    editTodo(id, newText, newDueDate) {
+        const todo = this.todos.find(todo => todo.id === id);
+        if (todo) {
+            todo.text = newText;
+            todo.dueDate = newDueDate; // Update due date
+            this.saveTodos();
+            this.render();
+            this.showMessage('タスクを更新しました');
+        }
+    }
+
+    moveTask(id, direction) {
+        const index = this.todos.findIndex(todo => todo.id === id);
+        if (index === -1) return;
+
+        if (direction === 'up' && index > 0) {
+            // Swap with previous element
+            [this.todos[index - 1], this.todos[index]] = [this.todos[index], this.todos[index - 1]];
+        } else if (direction === 'down' && index < this.todos.length - 1) {
+            // Swap with next element
+            [this.todos[index + 1], this.todos[index]] = [this.todos[index], this.todos[index + 1]];
+        } else {
+            return; // Invalid move
+        }
+
+        this.saveTodos();
+        this.render();
+    }
+
+    changePriority(id, newPriority) {
+        const todo = this.todos.find(todo => todo.id === id);
+        if (todo && ['low', 'medium', 'high'].includes(newPriority)) {
+            todo.priority = newPriority;
+            this.saveTodos();
+            this.render();
+            this.showMessage(`タスクの優先度を「${this.priorityToJapanese(newPriority)}」に変更しました`);
+        }
+    }
+
+    priorityToJapanese(priority) {
+        switch (priority) {
+            case 'low': return '低';
+            case 'medium': return '中';
+            case 'high': return '高';
+            default: return '';
+        }
     }
 
     updateStats() {
@@ -184,6 +446,10 @@ class TodoApp {
     }
 
     getEmptyMessage() {
+        if (this.searchTerm && this.searchInput && this.searchInput.value.trim() !== '') {
+            // Ensure searchInput value is also checked to differentiate from empty search triggering this
+            return `「${this.escapeHtml(this.searchInput.value)}」に一致するタスクはありません`;
+        }
         switch (this.currentFilter) {
             case 'active':
                 return '未完了のタスクがありません';
@@ -232,7 +498,18 @@ class TodoApp {
 
     loadTodos() {
         const saved = localStorage.getItem('todos');
-        return saved ? JSON.parse(saved) : [];
+        const todos = saved ? JSON.parse(saved) : [];
+        // Add default priority and ensure dueDate exists (as null if not present)
+        return todos.map(todo => {
+            const updatedTodo = { ...todo };
+            if (!updatedTodo.priority) {
+                updatedTodo.priority = 'medium';
+            }
+            if (typeof updatedTodo.dueDate === 'undefined') {
+                updatedTodo.dueDate = null;
+            }
+            return updatedTodo;
+        });
     }
 }
 
