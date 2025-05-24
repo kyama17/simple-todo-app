@@ -1,6 +1,6 @@
 # 📝 シンプルTodoアプリ
 
-モダンなデザインのシンプルなTodoアプリケーションです。
+モダンなデザインのシンプルなTodoアプリケーションです。フレームワークを使わずにVanilla JavaScriptで作成されており、軽量で高速に動作します。
 
 ## ✨ 機能
 
@@ -15,21 +15,27 @@
 
 ## 🚀 使い方
 
-1. サーバーを起動:
+1. リポジトリをクローンまたはダウンロード:
+   ```bash
+   git clone <repository-url>
+   cd simple-todo-app
+   ```
+
+2. サーバーを起動（Python 3が必要です）:
    ```bash
    python3 server.py
    ```
 
-2. ブラウザでアクセス:
+3. ブラウザでアクセス:
    - http://localhost:12000
 
 ## 📁 ファイル構成
 
-- `index.html` - メインのHTMLファイル
-- `style.css` - スタイルシート
-- `script.js` - JavaScript（アプリケーションロジック）
-- `sw.js` - Service Worker（オフライン対応）
-- `server.py` - 開発用Webサーバー
+- [`index.html`](index.html) - メインのHTMLファイル
+- [`style.css`](style.css) - スタイルシート
+- [`script.js`](script.js) - JavaScript（アプリケーションロジック）
+- [`sw.js`](sw.js) - Service Worker（オフライン対応）
+- [`server.py`](server.py) - 開発用Webサーバー
 
 ## 🛠️ 技術仕様
 
